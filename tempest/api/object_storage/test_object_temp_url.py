@@ -84,7 +84,7 @@ class ObjectTempUrlTest(base.BaseObjectTest):
             hashlib,
             CONF.object_storage_feature_enabled.tempurl_digest_hashlib)
         sig = hmac.new(
-            key.encode(), hmac_body.encode(), hlib
+            key.encode(), hmac_body.encode(), hashlib.sha1
         ).hexdigest()
 
         url = "%s/%s?temp_url_sig=%s&temp_url_expires=%s" % (container,
