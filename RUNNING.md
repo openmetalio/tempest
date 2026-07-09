@@ -131,17 +131,16 @@ use_dynamic_credentials = true
 
 [compute]
 endpoint_type = publicURL
-flavor_ref = <ID>
-flavor_ref_alt = <ID>
+flavor_ref = gen2.micro
+flavor_ref_alt = gen2.medium
 image_ref = <UUID>
+image_ssh_user = ubuntu
 image_ref_alt = <UUID>
+image_alt_ssh_user = centos
 
 [identity]
-auth_version = v3
 disable_ssl_certificate_validation = true
-region = <region>  # must match the region_id in `openstack catalog list`, or
-                    # Tempest silently falls back to a service's first listed
-                    # endpoint, which may be internal-only
+region = <NAME>
 uri_v3 = https://<IPADDR>:5000/v3
 v3_endpoint_type = publicURL
 
@@ -157,6 +156,7 @@ endpoint_type = publicURL
 
 [volume]
 endpoint_type = publicURL
+volume_size = 4
 ```
 
 Then we can do a quick test to make sure that the Tempest config is valid:
@@ -203,6 +203,11 @@ capacity, not the credential count.
 ## 7. Reading Results
 
 After a run, results are stored in the `.stestr/` directory inside the workspace.
+
+```sh
+cd ~/.config/temptest/my-cloud
+```
+
 Summarize the last run:
 
 ```bash
@@ -219,12 +224,6 @@ To save a subunit stream for later analysis or submission:
 
 ```bash
 stestr last --subunit > results.subunit
-```
-
-The `subunit-describe-calls` tool produces a summary of each test's API calls:
-
-```bash
-tempest subunit-describe-calls --subunit-input results.subunit
 ```
 
 ## 8. Submitting Results for Trademark Approval
