@@ -118,9 +118,12 @@ nova = true
 swift = true
 
 [validation]
-run_validation = true
-connect_method = floating
 auth_method = keypair
+connect_method = floating
+run_validation = true
+
+image_ssh_user = ubuntu
+image_alt_ssh_user = centos
 
 [auth]
 admin_username = admin
@@ -134,9 +137,7 @@ endpoint_type = publicURL
 flavor_ref = gen2.micro
 flavor_ref_alt = gen2.medium
 image_ref = <UUID>
-image_ssh_user = ubuntu
 image_ref_alt = <UUID>
-image_alt_ssh_user = centos
 
 [identity]
 disable_ssl_certificate_validation = true
