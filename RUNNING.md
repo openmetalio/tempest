@@ -200,57 +200,7 @@ Adjust `--concurrency` to the number of parallel workers. Each worker requires i
 set of credentials, so with dynamic credentials the limiting factor is usually cloud
 capacity, not the credential count.
 
-## 7. Interop trademark validation
-
-The Interop WG publishes required test lists as JSON guidelines files in the interop
-repository. Each guideline targets a specific OpenStack trademark (e.g., "OpenStack
-Powered Platform"). The test IDs in those files map directly to Tempest test names.
-
-**Step 1 — Get the current guideline file.**
-
-Clone or browse the interop repo to find the active guideline for the trademark you are
-pursuing. Guideline files are under `guidelines/` and look like `YYYY.NN.json`.
-
-**Step 2 — Extract the required test list.**
-
-The guideline JSON contains a `"tests"` object. Extract the test IDs into an include
-list:
-
-```bash
-python3 -c "
-import json, sys
-with open('guidelines/YYYY.NN.json') as f:
-    g = json.load(f)
-tests = [t for t, v in g['tests'].items() if v.get('required')]
-print('\n'.join(tests))
-" > interop-required-tests.txt
-```
-
-**Step 3 — List what will run before committing.**
-
-```bash
-tempest run --workspace my-cloud --include-list interop-required-tests.txt --list-tests
-```
-
-**Step 4 — Run only the required tests.**
-
-```bash
-tempest run --workspace my-cloud --include-list interop-required-tests.txt --serial
-```
-
-`--serial` avoids any parallel ordering issues; omit it if you want speed and have
-enough credential capacity.
-
-## 8. Running from anywhere (no workspace)
-
-If you prefer to run without a registered workspace, point directly at a config file:
-
-```bash
-tempest run --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
-  --include-list interop-required-tests.txt
-```
-
-## 9. Reading Results
+## 7. Reading Results
 
 After a run, results are stored in the `.stestr/` directory inside the workspace.
 Summarize the last run:
@@ -277,7 +227,7 @@ The `subunit-describe-calls` tool produces a summary of each test's API calls:
 tempest subunit-describe-calls --subunit-input results.subunit
 ```
 
-## 10. Submitting Results for Trademark Approval
+## 8. Submitting Results for Trademark Approval
 
 The submission process is managed by the OpenInfra Foundation. Contact them directly
 to confirm the current procedure, as the interop documentation has not been consistently
@@ -293,7 +243,7 @@ Before reaching out, have your results ready:
 stestr last --subunit > results.subunit
 ```
 
-## 11. Cleanup
+## 9. Cleanup
 
 After testing, remove all resources Tempest created. Run from the workspace directory
 or pass `--config-file` directly:
@@ -316,34 +266,3 @@ tempest cleanup \
   --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
   --delete-tempest-conf-objects
 ```
-
-## 12. Pre-Provisioned Credentials (Alternative to Dynamic)
-
-If admin credentials are unavailable or the cloud policy prevents dynamic user
-creation, use pre-provisioned credentials instead.
-
-Generate an accounts file from an environment where admin access is available:
-
-```bash
-tempest account-generator \
-  --os-username admin \
-  --os-password <password> \
-  --os-project-name admin \
-  --os-domain-name Default \
-  --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
-  --concurrency 4 \
-  --tag tempest \
-  accounts.yaml
-```
-
-Place the resulting `accounts.yaml` in the workspace `etc/` directory, then update
-`tempest.conf`:
-
-```ini
-[auth]
-use_dynamic_credentials = false
-test_accounts_file = /full/path/to/etc/accounts.yaml
-```
-
-The concurrency value should be at least twice the number of parallel workers you plan
-to use.
