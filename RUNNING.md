@@ -187,13 +187,13 @@ This writes `saved_state.json` into the current working directory.
 **Smoke tests** (quick sanity check):
 
 ```bash
-tempest run --workspace my-cloud --smoke
+tempest run --workspace my-cloud --concurrency 2 --smoke
 ```
 
 **Full test run:**
 
 ```bash
-tempest run --workspace my-cloud --concurrency 4
+tempest run --workspace my-cloud --concurrency 2
 ```
 
 Adjust `--concurrency` to the number of parallel workers. Each worker requires its own
