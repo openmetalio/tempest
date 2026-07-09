@@ -103,11 +103,11 @@ Now we can modify the `tempest.conf` to reflect the configuration values we coll
 # ~/.config/tempest/my-cloud/etc/tempest.conf
 
 [DEFAULT]
-log_file = ~/.config/tempest/my-cloud/tempest_log
+log_file = /home/<USER>/.config/tempest/my-cloud/logs/tempest.log
 use_stderr = true
 
 [oslo_concurrency]
-lock_path = ~/.config/tempest/my-cloud/tempest_lock
+lock_path = /home/<USER>/.config/tempest/my-cloud/tempest_lock
 
 [service_available]
 cinder = true
