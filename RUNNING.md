@@ -163,10 +163,8 @@ volume_size = 4
 Then we can do a quick test to make sure that the Tempest config is valid, and ensure that it will enable tests based on the extensions we have enabled:
 
 ```bash
-tempest verify-config --workspace my-cloud \
-  --update \
-  --replace-ext \
-  -o ~/.config/tempest/my-cloud/etc/tempest.conf
+TEMPEST_CONFIG=~/.config/tempest/my-cloud/etc/tempest.conf \
+tempest verify-config --update --replace-ext -o ~/.config/tempest/my-cloud/etc/tempest.conf
 ```
 
 This probes the live API to reconcile extension and feature flags in `tempest.conf`.
@@ -178,7 +176,8 @@ tool can safely remove only what Tempest created. `tempest cleanup` uses `--conf
 not `--workspace`:
 
 ```bash
-tempest cleanup --workspace my-cloud --init-saved-state
+tempest cleanup --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
+  --init-saved-state
 ```
 
 This writes `saved_state.json` into the current working directory.
@@ -188,13 +187,13 @@ This writes `saved_state.json` into the current working directory.
 **Smoke tests** (quick sanity check):
 
 ```bash
-tempest run --workspace my-cloud --concurrency 2 --smoke
+tempest run --workspace my-cloud --concurrency 3 --smoke
 ```
 
 **Full test run:**
 
 ```bash
-tempest run --workspace my-cloud --concurrency 2
+tempest run --workspace my-cloud --concurrency 3
 ```
 
 Adjust `--concurrency` to the number of parallel workers. Each worker requires its own
@@ -249,23 +248,19 @@ After testing, remove all resources Tempest created. Run from the workspace dire
 or pass `--config-file` directly:
 
 ```bash
-tempest cleanup --workspace my-cloud \
-  --config-file ~/.config/tempest/my-cloud/etc/tempest.conf
+tempest cleanup --config-file ~/.config/tempest/my-cloud/etc/tempest.conf
 ```
 
 To see what would be deleted first (dry run):
 
 ```bash
-tempest cleanup --workspace my-cloud \
-  --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
-  --dry-run
+tempest cleanup --dry-run --config-file ~/.config/tempest/my-cloud/etc/tempest.conf
 ```
 
 Review `dry_run.json` before proceeding. To also delete the Tempest admin project and
 users:
 
 ```bash
-tempest cleanup --workspace my-cloud \
-  --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
+tempest cleanup --config-file ~/.config/tempest/my-cloud/etc/tempest.conf \
   --delete-tempest-conf-objects
 ```
