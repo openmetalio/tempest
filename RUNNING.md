@@ -160,6 +160,23 @@ endpoint_type = publicURL
 volume_size = 4
 ```
 
+Next we need to disable some tests that are not valid when using Ceph RGW instead of OpenStack Swift:
+
+```conf
+# ~/.config/tempest/my-cloud/excluded-tests.txt
+
+# RGW returns 404 (not Swift's 401) for unauthenticated write/delete:
+tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_write_object_without_using_creds
+tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_delete_object_without_using_creds
+# RGW doesn't enforce Swift's arbitrary container-metadata count/length caps:
+tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_exceeds_overall_metadata_count
+tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_name_exceeds_max_length
+tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_value_exceeds_max_length
+# RGW allows serving a static web page from RGW but we don't enable it
+tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_index[id-c1f055ab-621d-4a6a-831f-846fcb578b8b]
+tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_listing_css[id-bc37ec94-43c8-4990-842e-0e5e02fc8926]
+```
+
 Then we can do a quick test to make sure that the Tempest config is valid, and ensure that it will enable tests based on the extensions we have enabled:
 
 ```bash
@@ -193,7 +210,7 @@ tempest run --workspace my-cloud --concurrency 2 --smoke
 **Full test run:**
 
 ```bash
-tempest run --workspace my-cloud --concurrency 2
+tempest run --workspace my-cloud --concurrency 2 --exclude-list ~/.config/tempest/my-cloud/excluded-tests.txt
 ```
 
 Adjust `--concurrency` to the number of parallel workers. Each worker requires its own
