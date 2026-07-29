@@ -163,7 +163,7 @@ volume_size = 4
 Next we need to disable some tests that are not valid when using Ceph RGW instead of OpenStack Swift:
 
 ```conf
-# ~/.config/tempest/my-cloud/excluded-tests.txt
+# ~/.config/tempest/my-cloud/exclude.txt
 
 # Glance Image sharing is admin-only by our policy and these tests share images
 # as a normal project user, which we intentionally forbid.
