@@ -81,6 +81,15 @@ openstack --os-cloud my-cloud flavor list
 openstack --os-cloud my-cloud network list --external
 ```
 
+Then add the cirros image:
+
+```bash
+wget https://download.cirros-cloud.net/0.6.3/cirros-0.6.3-x86_64-disk.img
+openstack --os-cloud my-cloud image create --public --disk-format qcow2 \
+  --container-format bare --file cirros-0.6.3-x86_64-disk.img cirros-0.6.3
+openstack --os-cloud my-cloud image list
+```
+
 ## 4. Tempest configuration
 
 Now we can create the tempest workspace and setup the configuration:
@@ -122,8 +131,8 @@ auth_method = keypair
 connect_method = floating
 run_validation = true
 
-image_ssh_user = ubuntu
-image_alt_ssh_user = centos
+image_ssh_user = cirros
+image_alt_ssh_user = cirros
 
 [auth]
 admin_username = admin
@@ -135,7 +144,7 @@ use_dynamic_credentials = true
 [compute]
 endpoint_type = publicURL
 flavor_ref = gen2.micro
-flavor_ref_alt = gen2.medium
+flavor_ref_alt = gen2.micro
 image_ref = <UUID>
 image_ref_alt = <UUID>
 
@@ -167,15 +176,33 @@ Next we need to disable some tests that are not valid when using Ceph RGW instea
 ```conf
 # ~/.config/tempest/my-cloud/exclude.txt
 
+# Cinder asserts a volume's host attribute is unchanged after a no-migration 
+# retype. Our cinder-volume runs active/active (shared cluster default@rbd-1), 
+# so a retype can be handled by a different cluster member and the host 
+# attribute changes even though no data moved. The assertion doesn't hold for 
+# active/active, so this test isn't applicable.
+tempest.api.volume.admin.test_volume_retype.VolumeRetypeWithoutMigrationTest.test_available_volume_retype
+
 # Glance Image sharing is admin-only by our policy and these tests share images
 # as a normal project user, which we intentionally forbid.
 tempest.api.image.v2.test_images.ListSharedImagesTest.test_list_images_param_member_status
 tempest.api.image.v2.test_images_member.ImagesMemberTest
 tempest.api.image.v2.test_images_member_negative.ImagesMemberNegativeTest
+# Glance advertises the read-only "http" store alongside "rbd", so Tempest's
+# get_available_stores() counts two stores and runs these multi-store tests.
+# Only "rbd" is writable, so there is no real second store to import/copy/delete
+# across. We run a single writable store; these tests aren't applicable.
+tempest.api.image.v2.admin.test_images.MultiStoresImagesTest
+tempest.api.image.v2.test_images.MultiStoresImportImagesTest
+# Glance uses copy-image with all_stores=True tries to copy into the read-only 
+# "http" store, which cannot accept image data, so the copy never completes. We
+# only provide a single writable store.
+tempest.api.image.v2.admin.test_images.ImportCopyImagesTest.test_image_copy_image_import
 
 # RGW returns 404 (not Swift's 401) for unauthenticated write/delete
-tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_write_object_without_using_creds
 tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_delete_object_without_using_creds
+tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_write_object_without_using_creds
+tempest.scenario.test_object_storage_basic_ops.TestObjectStorageBasicOps.test_swift_acl_anonymous_download
 # RGW doesn't enforce Swift's arbitrary container-metadata count/length caps
 tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_exceeds_overall_metadata_count
 tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_name_exceeds_max_length
@@ -184,13 +211,6 @@ tempest.api.object_storage.test_container_services_negative.ContainerNegativeTes
 # it requires knowing the domain(s) during configuration.
 tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_index
 tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_listing_css
-
-# VolumeRetypeWithoutMigrationTest asserts a volume's host attribute is 
-# unchanged after a no-migration retype. Our cinder-volume runs active/active 
-# (shared cluster default@rbd-1), so a retype can be handled by a different 
-# cluster member and the host attribute changes even though no data moved. The
-# assertion doesn't hold for active/active, so this test isn't applicable.
-tempest.api.volume.admin.test_volume_retype.VolumeRetypeWithoutMigrationTest.test_available_volume_retype
 ```
 
 Then we can do a quick test to make sure that the Tempest config is valid, and ensure that it will enable tests based on the extensions we have enabled:
