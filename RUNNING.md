@@ -170,6 +170,7 @@ Next we need to disable some tests that are not valid when using Ceph RGW instea
 tempest.api.image.v2.test_images.ListSharedImagesTest.test_list_images_param_member_status
 tempest.api.image.v2.test_images_member.ImagesMemberTest
 tempest.api.image.v2.test_images_member_negative.ImagesMemberNegativeTest
+
 # RGW returns 404 (not Swift's 401) for unauthenticated write/delete
 tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_write_object_without_using_creds
 tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_delete_object_without_using_creds
@@ -181,6 +182,13 @@ tempest.api.object_storage.test_container_services_negative.ContainerNegativeTes
 # it requires knowing the domain(s) during configuration.
 tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_index
 tempest.api.object_storage.test_container_staticweb.StaticWebTest.test_web_listing_css
+
+# VolumeRetypeWithoutMigrationTest asserts a volume's host attribute is 
+# unchanged after a no-migration retype. Our cinder-volume runs active/active 
+# (shared cluster default@rbd-1), so a retype can be handled by a different 
+# cluster member and the host attribute changes even though no data moved. The
+# assertion doesn't hold for active/active, so this test isn't applicable.
+tempest.api.volume.admin.test_volume_retype.VolumeRetypeWithoutMigrationTest.test_available_volume_retype
 ```
 
 Then we can do a quick test to make sure that the Tempest config is valid, and ensure that it will enable tests based on the extensions we have enabled:
