@@ -157,6 +157,8 @@ endpoint_type = publicURL
 
 [volume]
 endpoint_type = publicURL
+storage_protocol = ceph
+vendor_name = Open Source
 volume_size = 4
 ```
 
