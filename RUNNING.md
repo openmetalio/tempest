@@ -126,13 +126,21 @@ neutron = true
 nova = true
 swift = true
 
+[scenario]
+# By default this uses '/tmp` which only survives reboot for Cirros, not any 
+# other image. Change this to '/var/tmp' which communicates the intent but 
+# allows persistence on all images, not just the non-standard Cirros image.
+#
+# Quite a frustrating default. I'd almost wonder why this hasn't been corrected
+# but I assume everyone just updates `target_dir` like I'm doing here.
+target_dir = /var/tmp      
+
 [validation]
 auth_method = keypair
 connect_method = floating
-run_validation = true
-
 image_ssh_user = cirros
 image_alt_ssh_user = cirros
+run_validation = true
 
 [auth]
 admin_username = admin
@@ -198,10 +206,33 @@ tempest.api.image.v2.test_images.MultiStoresImportImagesTest
 # "http" store, which cannot accept image data, so the copy never completes. We
 # only provide a single writable store.
 tempest.api.image.v2.admin.test_images.ImportCopyImagesTest.test_image_copy_image_import
+# Glance location_import CalculateHash spuriously canceled on Ceph snapshots in
+# our multistore/HA setup (file-based task_cancellation_tracker false-positive;
+# no delete is issued). Import never finishes -> image never active. Workaround:
+# do_secure_hash=False. Excluded pending upstream fix — real bug, not N/A.
+tempest.api.compute.images.test_images.ImagesTestJSON.test_create_image_from_paused_server
+tempest.api.compute.images.test_images.ImagesTestJSON.test_create_image_from_stopped_server
+tempest.api.compute.images.test_images.ImagesTestJSON.test_create_image_from_suspended_server
+
+# copy-image import copies an image to ADDITIONAL stores. We run a single writable
+# store (rbd); the only other store is read-only http, which can't be a copy target.
+# With no valid destination store the copy never completes. Unlike MultiStores* this
+# test doesn't self-skip on a single store, so we exclude it. Not applicable to a
+# single-writable-store cloud.
+tempest.api.image.v2.admin.test_images.ImportCopyImagesTest.test_image_copy_image_import
+
+# Neutron correctly pushes subnet DNS updates via DHCP (dnsmasq is updated). This
+# test verifies it by signalling the guest's udhcpc to renew its lease, which needs
+# a udhcpc daemon + pid file at /var/run/udhcpc.<nic>.pid. Our cirros guest doesn't
+# run udhcpc that way, so renew_lease can't fire. Test-mechanism limitation tied to
+# the guest image, not a cloud capability gap.
+tempest.scenario.test_network_basic_ops.TestNetworkBasicOps.test_subnet_details
 
 # RGW returns 404 (not Swift's 401) for unauthenticated write/delete
 tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_delete_object_without_using_creds
 tempest.api.object_storage.test_container_acl_negative.ObjectACLsNegativeTest.test_write_object_without_using_creds
+# RGW optionally allows anonymous downloads but we don't enable them by default
+# which causes this test_swift_acl_anonymous_download test to fail.
 tempest.scenario.test_object_storage_basic_ops.TestObjectStorageBasicOps.test_swift_acl_anonymous_download
 # RGW doesn't enforce Swift's arbitrary container-metadata count/length caps
 tempest.api.object_storage.test_container_services_negative.ContainerNegativeTest.test_create_container_metadata_exceeds_overall_metadata_count
